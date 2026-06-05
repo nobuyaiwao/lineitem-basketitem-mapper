@@ -11,5 +11,5 @@ adyen-json-converter/
     ├── app.js
     │
     └── assets/
-        └── favicon.svg
+        └── favicon.ico
 ```
