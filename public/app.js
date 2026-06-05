@@ -44,62 +44,83 @@ function prettyPrint(obj) {
 function extractLineItems(input) {
   if (Array.isArray(input)) return input;
   if (Array.isArray(input.lineItems)) return input.lineItems;
-  throw new Error("lineItems must be an array or an object with a lineItems array.");
-}
-
-function extractBasket(input) {
-  if (input?.riskData?.basket) return input.riskData.basket;
-  if (input?.basket) return input.basket;
-  throw new Error("riskData.basket or basket is required.");
+  throw new Error("Input must be an array or an object with a lineItems array.");
 }
 
 function getAmountCurrency(input) {
   return input?.amount?.currency || input?.currency || null;
 }
 
-function lineItemsToRiskData(input) {
+function lineItemsToAdditionalData(input) {
   const lineItems = extractLineItems(input);
   const currency = getAmountCurrency(input);
-  const basket = {};
+  const additionalData = {};
   const warnings = [];
 
   lineItems.forEach((item, index) => {
-    const riskItem = {};
-    const itemKey = `item${index + 1}`;
+    const itemNumber = index + 1;
+    const prefix = `riskdata.basket.item${itemNumber}`;
 
     for (const [lineKey, riskKey] of Object.entries(lineToRiskMap)) {
       if (item[lineKey] !== undefined && item[lineKey] !== null) {
-        riskItem[riskKey] = String(item[lineKey]);
+        additionalData[`${prefix}.${riskKey}`] = String(item[lineKey]);
       }
     }
 
     if (currency) {
-      riskItem.currency = String(currency);
+      additionalData[`${prefix}.currency`] = String(currency);
     } else {
-      warnings.push(`item${index + 1}: currency is not available. Expected input.amount.currency or input.currency.`);
+      warnings.push(
+        `item${itemNumber}: currency is not available. Expected amount.currency or top-level currency.`
+      );
     }
 
     notMappedLineFields.forEach((field) => {
       if (item[field] !== undefined && item[field] !== null) {
-        warnings.push(`item${index + 1}: lineItems.${field} is not mapped to riskData.basket.`);
+        warnings.push(
+          `item${itemNumber}: lineItems.${field} is not mapped to riskdata.basket.item${itemNumber}.*`
+        );
       }
     });
-
-    basket[itemKey] = riskItem;
   });
 
   return {
     result: {
-      riskData: {
-        basket
-      }
+      additionalData
     },
     warnings
   };
 }
 
-function riskDataToLineItems(input) {
-  const basket = extractBasket(input);
+function extractAdditionalData(input) {
+  if (input?.additionalData) return input.additionalData;
+  throw new Error("Input must be an object with additionalData.");
+}
+
+function additionalDataToBasket(additionalData) {
+  const basket = {};
+
+  Object.entries(additionalData).forEach(([key, value]) => {
+    const match = key.match(/^riskdata\.basket\.(item\d+)\.(.+)$/);
+
+    if (!match) return;
+
+    const [, itemKey, fieldName] = match;
+
+    if (!basket[itemKey]) {
+      basket[itemKey] = {};
+    }
+
+    basket[itemKey][fieldName] = value;
+  });
+
+  return basket;
+}
+
+function additionalDataToLineItems(input) {
+  const additionalData = extractAdditionalData(input);
+  const basket = additionalDataToBasket(additionalData);
+
   const reverseMap = Object.fromEntries(
     Object.entries(lineToRiskMap).map(([lineKey, riskKey]) => [riskKey, lineKey])
   );
@@ -108,44 +129,64 @@ function riskDataToLineItems(input) {
   const warnings = [];
   let detectedCurrency = null;
 
-  Object.keys(basket)
-    .sort((a, b) => Number(a.replace("item", "")) - Number(b.replace("item", "")))
-    .forEach((itemKey) => {
-      const riskItem = basket[itemKey];
-      const lineItem = {};
+  const itemKeys = Object.keys(basket).sort((a, b) => {
+    return Number(a.replace("item", "")) - Number(b.replace("item", ""));
+  });
 
-      for (const [riskKey, lineKey] of Object.entries(reverseMap)) {
-        if (riskItem[riskKey] !== undefined && riskItem[riskKey] !== null) {
-          if (lineKey === "quantity" || lineKey === "amountIncludingTax") {
-            lineItem[lineKey] = Number(riskItem[riskKey]);
-          } else {
-            lineItem[lineKey] = riskItem[riskKey];
-          }
-        }
+  if (itemKeys.length === 0) {
+    throw new Error("No riskdata.basket.item{N}.* fields were found in additionalData.");
+  }
+
+  itemKeys.forEach((itemKey) => {
+    const riskItem = basket[itemKey];
+    const lineItem = {};
+
+    Object.entries(riskItem).forEach(([riskKey, value]) => {
+      if (riskKey === "currency") {
+        detectedCurrency = value;
+        return;
       }
 
-      if (riskItem.currency) {
-        detectedCurrency = riskItem.currency;
+      const lineKey = reverseMap[riskKey];
+
+      if (!lineKey) {
+        warnings.push(`${itemKey}: riskdata.basket.${itemKey}.${riskKey} is not mapped to lineItems.`);
+        return;
       }
 
-      lineItems.push(lineItem);
+      if (lineKey === "quantity" || lineKey === "amountIncludingTax") {
+        lineItem[lineKey] = Number(value);
+      } else {
+        lineItem[lineKey] = value;
+      }
     });
 
-  const result = { lineItems };
+    lineItems.push(lineItem);
+  });
+
+  const result = {
+    lineItems
+  };
 
   if (detectedCurrency) {
     result.amount = {
       currency: detectedCurrency,
       value: 0
     };
-    warnings.push("currency was mapped to amount.currency. amount.value is set to 0 as a placeholder.");
+
+    warnings.push(
+      "currency was mapped to amount.currency. amount.value is set to 0 as a placeholder."
+    );
   }
 
   warnings.push(
-    "The following lineItems fields cannot be restored from riskData.basket: amountExcludingTax, taxAmount, taxPercentage, taxCategory, productUrl, imageUrl, marketplaceSellerId."
+    "The following lineItems fields cannot be restored from additionalData: amountExcludingTax, taxAmount, taxPercentage, taxCategory, productUrl, imageUrl, marketplaceSellerId."
   );
 
-  return { result, warnings };
+  return {
+    result,
+    warnings
+  };
 }
 
 function updateMessage(status, warnings = []) {
@@ -161,37 +202,41 @@ function updateMessage(status, warnings = []) {
 
 function convertFromLineItems() {
   const input = parseJson(lineItemsInput.value);
+
   if (!input) {
     riskDataInput.value = "";
+    directionText.textContent = "Auto";
     updateMessage("Ready.");
     return;
   }
 
-  const { result, warnings } = lineItemsToRiskData(input);
+  const { result, warnings } = lineItemsToAdditionalData(input);
 
   isProgrammaticUpdate = true;
   riskDataInput.value = prettyPrint(result);
   isProgrammaticUpdate = false;
 
-  directionText.textContent = "lineItems → riskData.basket";
+  directionText.textContent = "lineItems → additionalData";
   updateMessage("Converted successfully.", warnings);
 }
 
-function convertFromRiskData() {
+function convertFromAdditionalData() {
   const input = parseJson(riskDataInput.value);
+
   if (!input) {
     lineItemsInput.value = "";
+    directionText.textContent = "Auto";
     updateMessage("Ready.");
     return;
   }
 
-  const { result, warnings } = riskDataToLineItems(input);
+  const { result, warnings } = additionalDataToLineItems(input);
 
   isProgrammaticUpdate = true;
   lineItemsInput.value = prettyPrint(result);
   isProgrammaticUpdate = false;
 
-  directionText.textContent = "riskData.basket → lineItems";
+  directionText.textContent = "additionalData → lineItems";
   updateMessage("Converted successfully.", warnings);
 }
 
@@ -208,7 +253,7 @@ lineItemsInput.addEventListener("input", () => {
       convertFromLineItems();
     } catch (error) {
       statusText.textContent = "Invalid lineItems JSON.";
-      directionText.textContent = "lineItems → riskData.basket";
+      directionText.textContent = "lineItems → additionalData";
       messageOutput.textContent = error.message;
     }
   });
@@ -219,10 +264,10 @@ riskDataInput.addEventListener("input", () => {
 
   debounce(() => {
     try {
-      convertFromRiskData();
+      convertFromAdditionalData();
     } catch (error) {
-      statusText.textContent = "Invalid riskData JSON.";
-      directionText.textContent = "riskData.basket → lineItems";
+      statusText.textContent = "Invalid additionalData JSON.";
+      directionText.textContent = "additionalData → lineItems";
       messageOutput.textContent = error.message;
     }
   });
@@ -235,7 +280,7 @@ document.getElementById("copy-lineitems").addEventListener("click", async () => 
 
 document.getElementById("copy-riskdata").addEventListener("click", async () => {
   await navigator.clipboard.writeText(riskDataInput.value);
-  updateMessage("Copied riskData JSON.");
+  updateMessage("Copied additionalData JSON.");
 });
 
 document.getElementById("clear-lineitems").addEventListener("click", () => {
@@ -245,5 +290,5 @@ document.getElementById("clear-lineitems").addEventListener("click", () => {
 
 document.getElementById("clear-riskdata").addEventListener("click", () => {
   riskDataInput.value = "";
-  updateMessage("Cleared riskData.");
+  updateMessage("Cleared additionalData.");
 });
