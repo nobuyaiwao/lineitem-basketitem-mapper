@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Adyen lineItems / riskData Converter</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>Adyen JSON Converter</h1>
+      <p>Convert between <code>lineItems</code> and <code>riskData.basket.item{N}</code>.</p>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <section class="editor-panel">
+      <div class="panel-header">
+        <div>
+          <h2>lineItems</h2>
+          <span>Paste or edit Checkout API lineItems JSON</span>
+        </div>
+        <div class="panel-actions">
+          <button id="copy-lineitems">Copy</button>
+          <button id="clear-lineitems">Clear</button>
+        </div>
+      </div>
+
+      <textarea
+        id="lineitems-json"
+        spellcheck="false"
+        placeholder='{
+  "lineItems": [
+    {
+      "id": "SKU-123",
+      "description": "Blue T-Shirt",
+      "quantity": 2,
+      "amountIncludingTax": 2400,
+      "productUrl": "https://example.com/product/123",
+      "imageUrl": "https://example.com/image.jpg",
+      "itemCategory": "Apparel"
+    }
+  ]
+}'
+      ></textarea>
+    </section>
+
+    <section class="editor-panel">
+      <div class="panel-header">
+        <div>
+          <h2>riskData.basket</h2>
+          <span>Paste or edit RevenueProtect basket JSON</span>
+        </div>
+        <div class="panel-actions">
+          <button id="copy-riskdata">Copy</button>
+          <button id="clear-riskdata">Clear</button>
+        </div>
+      </div>
+
+      <textarea
+        id="riskdata-json"
+        spellcheck="false"
+        placeholder='{
+  "riskData": {
+    "basket": {
+      "item1": {
+        "itemID": "SKU-123",
+        "productTitle": "Blue T-Shirt",
+        "quantity": "2",
+        "price": "2400",
+        "itemURL": "https://example.com/product/123",
+        "imageURL": "https://example.com/image.jpg",
+        "category": "Apparel"
+      }
+    }
+  }
+}'
+      ></textarea>
+    </section>
+  </main>
+
+  <section class="status-bar">
+    <div>
+      <strong>Status</strong>
+      <span id="status-text">Ready.</span>
+    </div>
+    <div>
+      <strong>Direction</strong>
+      <span id="direction-text">Auto</span>
+    </div>
+  </section>
+
+  <section class="message-panel">
+    <h2>Warnings</h2>
+    <pre id="message-output">No warnings.</pre>
+  </section>
+
+  <script src="./app.js"></script>
+</body>
+</html>

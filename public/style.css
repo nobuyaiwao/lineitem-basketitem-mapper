@@ -1,0 +1,174 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f4f6f8;
+  color: #1f2933;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.topbar {
+  padding: 22px 32px;
+  background: #ffffff;
+  border-bottom: 1px solid #d9e2ec;
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.topbar p {
+  margin: 6px 0 0;
+  color: #62748a;
+}
+
+code {
+  background: #eef2f7;
+  padding: 2px 6px;
+  border-radius: 5px;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  padding: 24px 32px;
+  height: calc(100vh - 210px);
+  min-height: 520px;
+}
+
+.editor-panel {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid #d9e2ec;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 72px;
+  padding: 14px 16px;
+  background: #fbfdff;
+  border-bottom: 1px solid #d9e2ec;
+}
+
+.panel-header h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.panel-header span {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #6b7c93;
+}
+
+.panel-actions {
+  display: flex;
+  gap: 8px;
+}
+
+button {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  border-radius: 7px;
+  padding: 7px 11px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #f1f5f9;
+}
+
+textarea {
+  flex: 1;
+  width: 100%;
+  resize: none;
+  border: none;
+  outline: none;
+  padding: 18px;
+  background: #0f172a;
+  color: #e5e7eb;
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.55;
+  tab-size: 2;
+}
+
+textarea::placeholder {
+  color: #64748b;
+}
+
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 32px 16px;
+  padding: 12px 16px;
+  background: #ffffff;
+  border: 1px solid #d9e2ec;
+  border-radius: 9px;
+  color: #475569;
+  font-size: 13px;
+}
+
+.status-bar strong {
+  margin-right: 8px;
+  color: #1e293b;
+}
+
+.message-panel {
+  margin: 0 32px 24px;
+  background: #ffffff;
+  border: 1px solid #d9e2ec;
+  border-radius: 9px;
+  overflow: hidden;
+}
+
+.message-panel h2 {
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 14px;
+  border-bottom: 1px solid #d9e2ec;
+  background: #fbfdff;
+}
+
+.message-panel pre {
+  margin: 0;
+  min-height: 60px;
+  max-height: 120px;
+  overflow: auto;
+  padding: 12px 14px;
+  color: #475569;
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 900px) {
+  .workspace {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .editor-panel {
+    min-height: 420px;
+  }
+
+  .status-bar {
+    flex-direction: column;
+    gap: 8px;
+  }
+}

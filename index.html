@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Adyen lineItems / riskData.basket Converter</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Adyen JSON Converter</h1>
+    <p>Convert between <code>lineItems</code> and <code>riskData.basket.item{N}</code>.</p>
+  </header>
+
+  <main class="converter-layout">
+    <section class="panel">
+      <div class="panel-header">
+        <h2>lineItems</h2>
+        <button id="format-lineitems" class="secondary-button">Format</button>
+      </div>
+
+      <textarea
+        id="lineitems-json"
+        spellcheck="false"
+        placeholder='{
+  "lineItems": [
+    {
+      "id": "SKU-123",
+      "description": "Blue T-Shirt",
+      "quantity": 2,
+      "amountIncludingTax": 2400,
+      "productUrl": "https://example.com/product/123",
+      "imageUrl": "https://example.com/image.jpg",
+      "itemCategory": "Apparel"
+    }
+  ]
+}'
+      ></textarea>
+    </section>
+
+    <section class="action-panel">
+      <button id="to-riskdata" class="arrow-button" title="Convert lineItems to riskData">
+        →
+      </button>
+
+      <button id="to-lineitems" class="arrow-button" title="Convert riskData to lineItems">
+        ←
+      </button>
+
+      <button id="clear-all" class="clear-button">Clear</button>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>riskData.basket</h2>
+        <button id="format-riskdata" class="secondary-button">Format</button>
+      </div>
+
+      <textarea
+        id="riskdata-json"
+        spellcheck="false"
+        placeholder='{
+  "riskData": {
+    "basket": {
+      "item1": {
+        "itemID": "SKU-123",
+        "productTitle": "Blue T-Shirt",
+        "quantity": "2",
+        "price": "2400",
+        "itemURL": "https://example.com/product/123",
+        "imageURL": "https://example.com/image.jpg",
+        "category": "Apparel"
+      }
+    }
+  }
+}'
+      ></textarea>
+    </section>
+  </main>
+
+  <section class="message-panel">
+    <h2>Validation / Warnings</h2>
+    <pre id="message-output">Ready.</pre>
+  </section>
+
+  <script src="./app.js"></script>
+</body>
+</html>

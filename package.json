@@ -1,0 +1,16 @@
+{
+  "name": "adyen-json-converter",
+  "version": "1.0.0",
+  "description": "Adyen lineItems and riskData.basket JSON converter",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
